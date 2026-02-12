@@ -74,6 +74,6 @@ function moveNoButtonAway(event) {
 yesBtn.addEventListener("click", () => {
   app.innerHTML = `
     <h1 class="final-message">Yay! 💖 Happy Valentine’s Day!</h1>
-    <p class="final-subtext">You just made this page very happy.</p>
+    <p class="final-subtext">You just made parteek very happy ,I am sure he is grining.</p>
   `;
 });

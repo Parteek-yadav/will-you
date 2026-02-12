@@ -253,7 +253,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Replace all initial content (question, buttons, GIF) with final message
     content.innerHTML = `
       <img src="./yes.gif" alt="Happy Valentine celebration" class="final-gif" />
-      <h1 class="final-message">You made me very happy 💖</h1>
+      <h1 class="final-message">I’m really glad you said yes 💘</h1>
     `;
   });
 });

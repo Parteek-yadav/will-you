@@ -128,6 +128,7 @@ body::before {
   background: linear-gradient(135deg, #ff758c, #ff7eb3);
   color: #fff;
   box-shadow: 0 10px 24px rgba(255, 105, 180, 0.6);
+  transform-origin: center;
 }
 
 .btn.yes:hover,
@@ -175,3 +176,4 @@ body::before {
     width: 100%;
   }
 }
+

@@ -10,9 +10,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const noMessages = [
     "Are you sure?",
-    "Are you fully sure?",
+    "Are you really sure?",
     "I will be very sad 😢",
-    "Nope",
+    "Okay… try clicking 😏",
   ];
 
   function growYesButton() {

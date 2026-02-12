@@ -1,79 +1,119 @@
-const yesBtn = document.getElementById("yes-btn");
-const noBtn = document.getElementById("no-btn");
-const app = document.getElementById("app");
+document.addEventListener("DOMContentLoaded", () => {
+  const yesBtn = document.getElementById("yes-btn");
+  const noBtn = document.getElementById("no-btn");
+  const content = document.getElementById("content");
 
-let escapeAttempts = 0;
-let yesScale = 1;
+  let noClickStage = 0; // 0–3 for the four messages
+  let escapeCount = 0; // number of times the No button has escaped
+  let yesScale = 1;
+  let noIsFloating = false;
 
-// Helper to clamp values
-function clamp(value, min, max) {
-  return Math.min(Math.max(value, min), max);
-}
+  const noMessages = [
+    "Are you sure?",
+    "Are you fully sure?",
+    "I will be very sad 😢",
+    "Nope",
+  ];
 
-function moveNoButtonAway(event) {
-  escapeAttempts++;
+  function growYesButton() {
+    yesScale += 0.06; // small, smooth growth
+    yesBtn.style.transform = `scale(${yesScale})`;
+  }
 
-  // Make "No" button free to move around the viewport
-  if (escapeAttempts === 1) {
+  function makeNoFloatingIfNeeded() {
+    if (noIsFloating) return;
+
     const rect = noBtn.getBoundingClientRect();
+
+    // Lock current visual position, then switch to fixed so we can move it
     noBtn.style.position = "fixed";
     noBtn.style.left = `${rect.left}px`;
     noBtn.style.top = `${rect.top}px`;
+    noBtn.style.margin = "0";
+    noBtn.style.zIndex = "10";
+
+    noIsFloating = true;
   }
 
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
-  const btnRect = noBtn.getBoundingClientRect();
+  function escapeFromPointer() {
+    makeNoFloatingIfNeeded();
 
-  const paddingBase = 40; // minimum distance from edges
-  const intensity = clamp(0.2 + escapeAttempts * 0.12, 0.2, 1); // higher = closer to edges
+    escapeCount += 1;
 
-  const padX = paddingBase * (1 - intensity);
-  const padY = paddingBase * (1 - intensity);
+    // Each escape gets faster (shorter duration)
+    const baseDuration = 0.7;
+    const duration = Math.max(0.15, baseDuration - escapeCount * 0.08);
+    noBtn.style.transition = `left ${duration}s ease, top ${duration}s ease, transform ${duration}s ease`;
 
-  const maxLeft = vw - btnRect.width - padX;
-  const maxTop = vh - btnRect.height - padY;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
 
-  const newLeft = clamp(
-    padX + Math.random() * (maxLeft - padX),
-    padX,
-    maxLeft
-  );
-  const newTop = clamp(
-    padY + Math.random() * (maxTop - padY),
-    padY,
-    maxTop
-  );
+    const btnWidth = noBtn.offsetWidth;
+    const btnHeight = noBtn.offsetHeight;
 
-  // Speed: faster with each attempt (shorter duration)
-  const baseDuration = 0.35;
-  const minDuration = 0.08;
-  const duration = clamp(baseDuration - escapeAttempts * 0.03, minDuration, baseDuration);
+    const maxX = vw - btnWidth;
+    const maxY = vh - btnHeight;
 
-  noBtn.style.transition = `top ${duration}s ease-out, left ${duration}s ease-out, transform 0.15s ease-out`;
-  noBtn.style.left = `${newLeft}px`;
-  noBtn.style.top = `${newTop}px`;
+    // Current position
+    const currentRect = noBtn.getBoundingClientRect();
+    const currentX = currentRect.left;
+    const currentY = currentRect.top;
 
-  // Tiny jitter to feel more "slippery"
-  const jitter = Math.min(escapeAttempts * 2, 12);
-  const jitterX = (Math.random() - 0.5) * jitter;
-  const jitterY = (Math.random() - 0.5) * jitter;
-  noBtn.style.transform = `translate(${jitterX}px, ${jitterY}px)`;
+    let targetX;
+    let targetY;
+    let attempts = 0;
 
-  // Grow the "Yes" button slightly each time
-  yesScale += 0.05;
-  yesBtn.style.transform = `scale(${yesScale})`;
-}
+    // Pick a new, somewhat distant random position inside the viewport
+    do {
+      targetX = Math.random() * maxX;
+      targetY = Math.random() * maxY;
+      attempts += 1;
+    } while (
+      Math.hypot(targetX - currentX, targetY - currentY) < 80 &&
+      attempts < 10
+    );
 
-// Events that should trigger the escape
-["mouseenter", "mousedown", "touchstart"].forEach((evt) => {
-  noBtn.addEventListener(evt, moveNoButtonAway);
-});
+    // Clamp to viewport to keep button fully visible
+    targetX = Math.min(Math.max(0, targetX), maxX);
+    targetY = Math.min(Math.max(0, targetY), maxY);
 
-// Handle "Yes" click
-yesBtn.addEventListener("click", () => {
-  app.innerHTML = `
-    <h1 class="final-message">Yay! 💖 Happy Valentine’s Day!</h1>
-    <p class="final-subtext">You just made parteek very happy ,I am sure he is grining.</p>
-  `;
+    noBtn.style.left = `${targetX}px`;
+    noBtn.style.top = `${targetY}px`;
+
+    // Slight random rotation for more "unpredictable" feel
+    const randomAngle = (Math.random() - 0.5) * 24;
+    noBtn.style.transform = `rotate(${randomAngle}deg)`;
+
+    // Each escape makes Yes a bit more tempting
+    growYesButton();
+  }
+
+  // No button click behavior with strict message order
+  noBtn.addEventListener("click", (event) => {
+    event.preventDefault();
+
+    if (noClickStage < 4) {
+      // Sequence of four messages
+      noBtn.textContent = noMessages[noClickStage];
+      noClickStage += 1;
+
+      // After fourth click ("Nope"), enable hover/tap escapes
+      if (noClickStage === 4) {
+        noBtn.addEventListener("mouseenter", escapeFromPointer);
+        noBtn.addEventListener("touchstart", escapeFromPointer, {
+          passive: true,
+        });
+      }
+    } else {
+      // After the sequence, clicking also triggers an escape
+      escapeFromPointer();
+    }
+  });
+
+  // Yes button: accept and show final message
+  yesBtn.addEventListener("click", () => {
+    // Replace all initial content (question, buttons, GIF) with final message
+    content.innerHTML =
+      '<h1 class="final-message">You made me very happy 💖</h1>';
+  });
 });
